@@ -1,7 +1,7 @@
 import { json, isSafeId } from "../server/http";
 import { getHistory } from "../server/supabase";
 
-export default async function handler(request: Request) {
+async function handler(request: Request) {
   if (request.method !== "GET") {
     return json({ error: "Method not allowed" }, 405);
   }
@@ -22,3 +22,6 @@ export default async function handler(request: Request) {
     return json({ error: "Stored history is temporarily unavailable" }, 500);
   }
 }
+export default {
+  fetch: handler,
+};
