@@ -1,5 +1,5 @@
-import { getConfig } from "./env";
-import type { TherapyMemory, TherapyMessage, TherapyUser } from "./supabase";
+import { getConfig } from "./env.js";
+import type { TherapyMemory, TherapyMessage, TherapyUser } from "./supabase.js";
 
 type GroqContext = {
   user: TherapyUser | null;
