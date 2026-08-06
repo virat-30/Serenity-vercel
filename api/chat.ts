@@ -19,7 +19,7 @@ import {
 
 export const maxDuration = 60;
 
-export default async function handler(request: Request) {
+async function handler(request: Request) {
   if (request.method !== "POST") {
     return json({ error: "Method not allowed" }, 405);
   }
@@ -130,3 +130,6 @@ export default async function handler(request: Request) {
     return json({ error: "Serenity could not respond right now" }, 500);
   }
 }
+export default {
+  fetch: handler,
+};
