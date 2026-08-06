@@ -1,6 +1,6 @@
-import { getConfig } from "./env";
-import type { CrisisSeverity } from "./safety";
-import type { MoodAnalysis } from "./mood";
+import { getConfig } from "./env.js";
+import type { CrisisSeverity } from "./safety.js";
+import type { MoodAnalysis } from "./mood.js";
 
 export type TherapyUser = {
   id: string;
