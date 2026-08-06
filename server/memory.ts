@@ -1,4 +1,4 @@
-import type { NewMemoryRow } from "./supabase";
+import type { NewMemoryRow } from "./supabase.js";
 
 type ParsedMemory = {
   type?: string;
