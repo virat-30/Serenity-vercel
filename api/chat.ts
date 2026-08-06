@@ -1,8 +1,8 @@
-import { json, isSafeId } from "../server/http";
-import { analyzeMood } from "../server/mood";
-import { crisisResponse, detectCrisis } from "../server/safety";
-import { generateTherapistResponse } from "../server/groq";
-import { parseModelResponse, prepareMemoryRows } from "../server/memory";
+import { json, isSafeId } from "../server/http.js";
+import { analyzeMood } from "../server/mood.js";
+import { crisisResponse, detectCrisis } from "../server/safety.js";
+import { generateTherapistResponse } from "../server/groq.js";
+import { parseModelResponse, prepareMemoryRows } from "../server/memory.js";
 import {
   deleteExpiredMemories,
   deleteMemoriesByIds,
@@ -15,7 +15,7 @@ import {
   saveMessage,
   saveMoodLog,
   updateUserName,
-} from "../server/supabase";
+} from "../server/supabase.js";
 
 export const maxDuration = 60;
 
