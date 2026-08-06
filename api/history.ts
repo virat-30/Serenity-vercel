@@ -1,5 +1,5 @@
-import { json, isSafeId } from "../server/http";
-import { getHistory } from "../server/supabase";
+import { json, isSafeId } from "../server/http.js";
+import { getHistory } from "../server/supabase.js";
 
 async function handler(request: Request) {
   if (request.method !== "GET") {
