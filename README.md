@@ -46,14 +46,13 @@ The migration also separates `userId` from `sessionId`. A browser keeps one stab
 ## Deploy to Vercel
 
 1. Create a new GitHub repository or replace the old Serenity repository contents with this folder.
-2. Do **not** upload a real `.env` file. Only `.env.example` belongs on GitHub.
-3. Open Vercel and choose **Add New → Project**.
-4. Import the GitHub repository.
-5. Vercel should detect **Vite** automatically.
-6. Leave **Root Directory** as the repository root.
-7. Build command: `npm run build`.
-8. Output directory: `dist`.
-9. In **Project Settings → Environment Variables**, add:
+2. Open Vercel and choose **Add New → Project**.
+3. Import the GitHub repository.
+4. Vercel should detect **Vite** automatically.
+5. Leave **Root Directory** as the repository root.
+6. Build command: `npm run build`.
+7. Output directory: `dist`.
+8. In **Project Settings → Environment Variables**, add:
 
 ```text
 SUPABASE_URL
