@@ -22,6 +22,8 @@ export function getConfig(): SerenityConfig {
     supabaseUrl,
     supabaseServiceRoleKey: required("SUPABASE_SERVICE_ROLE_KEY"),
     groqApiKey: required("GROQ_API_KEY"),
-    groqModel: String(process.env.GROQ_MODEL || "llama-3.3-70b-versatile").trim(),
+   groqModel: String(
+  process.env.GROQ_MODEL || "openai/gpt-oss-120b"
+).trim(),
   };
 }
