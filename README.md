@@ -16,7 +16,7 @@ Vercel /api/chat
         +-- Mood analysis
         +-- User profile / memory / history orchestration
         |
-        +----> Groq (Llama 3.3 70B)
+        +----> Groq + GPT-OSS 120B
         |
         +----> Supabase
                +-- therapy_users
@@ -58,7 +58,7 @@ The migration also separates `userId` from `sessionId`. A browser keeps one stab
 SUPABASE_URL
 SUPABASE_SERVICE_ROLE_KEY
 GROQ_API_KEY
-GROQ_MODEL=llama-3.3-70b-versatile
+GROQ_MODEL=openai/gpt-oss-120b
 ```
 
 10. Add the variables to Production, Preview and Development if you want all three environments to work.
