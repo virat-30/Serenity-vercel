@@ -279,84 +279,105 @@ export default function App() {
    * ---------------------------------------------------------
    */
 
-  async function sendMessage(
-    event: FormEvent<HTMLFormElement>,
+ async function sendMessage(event: FormEvent<HTMLFormElement>) {
+  event.preventDefault();
+
+  const cleanMessage = message.trim();
+
+  if (
+    !cleanMessage ||
+    isSending ||
+    !userId ||
+    !sessionId
   ) {
-    event.preventDefault();
+    return;
+  }
 
-    const cleanMessage = message.trim();
+  const userMessage: ChatMessage = {
+    id: `user-${Date.now()}`,
+    role: "user",
+    content: cleanMessage,
+    createdAt: new Date().toISOString(),
+  };
 
-    if (
-      !cleanMessage ||
-      isSending ||
-      !userId ||
-      !sessionId
-    ) {
-      return;
+  setMessages((previousMessages) => [
+    ...previousMessages,
+    userMessage,
+  ]);
+
+  setMessage("");
+  setError("");
+  setIsSending(true);
+
+  try {
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        userId,
+        sessionId,
+        chatInput: cleanMessage,
+        mood: moods[selectedMood].label.toLowerCase(),
+      }),
+    });
+
+    const contentType =
+      response.headers.get("content-type") || "";
+
+    let data: {
+      output?: string;
+      error?: string;
+      message?: string;
+    } = {};
+
+    if (contentType.includes("application/json")) {
+      data = await response.json();
+    } else {
+      const text = await response.text();
+
+      throw new Error(
+        `API returned ${response.status}: ${
+          text || "Unknown server error"
+        }`,
+      );
     }
 
-    const userMessage: ChatMessage = {
-      id: `user-${Date.now()}`,
-      role: "user",
-      content: cleanMessage,
+    if (!response.ok) {
+      throw new Error(
+        data.error ||
+          data.message ||
+          `Serenity API error (${response.status})`,
+      );
+    }
+
+    const assistantMessage: ChatMessage = {
+      id: `assistant-${Date.now()}`,
+      role: "assistant",
+      content:
+        data.output ||
+        "I’m here with you. Could you tell me a little more?",
       createdAt: new Date().toISOString(),
     };
 
     setMessages((previousMessages) => [
       ...previousMessages,
-      userMessage,
+      assistantMessage,
     ]);
+  } catch (requestError) {
+    console.error("Serenity chat error:", requestError);
 
-    setMessage("");
-    setError("");
-    setIsSending(true);
-
-    try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId,
-          sessionId,
-          chatInput: cleanMessage,
-          mood: moods[selectedMood].label.toLowerCase(),
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.error ||
-            "Serenity could not respond.",
-        );
-      }
-
-      const assistantMessage: ChatMessage = {
-        id: `assistant-${Date.now()}`,
-        role: "assistant",
-        content:
-          data.output ||
-          "I’m here with you. Could you tell me a little more?",
-        createdAt: new Date().toISOString(),
-      };
-
-      setMessages((previousMessages) => [
-        ...previousMessages,
-        assistantMessage,
-      ]);
-    } catch (requestError) {
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "The live assistant is unavailable right now.",
-      );
-    } finally {
-      setIsSending(false);
-    }
+    setError(
+      requestError instanceof Error
+        ? requestError.message
+        : "The live assistant is unavailable right now.",
+    );
+  } finally {
+    setIsSending(false);
   }
+}
 
   /*
    * ---------------------------------------------------------
