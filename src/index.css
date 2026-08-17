@@ -1123,3 +1123,227 @@ input:focus-visible {
     animation-iteration-count: 1 !important;
   }
 }
+/* =========================================================
+   SERENITY CHAT - MESSAGE LAYOUT FIX
+   ========================================================= */
+
+/* Main chat screen */
+.chat-page,
+.chat-container,
+.app-container {
+  height: 100vh;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Header should never shrink */
+.chat-header {
+  flex-shrink: 0;
+}
+
+/* =========================================================
+   SCROLLABLE MESSAGE AREA
+   ========================================================= */
+
+.messages-container,
+.chat-messages,
+.messages {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  padding: 24px 40px 150px;
+
+  box-sizing: border-box;
+
+  scroll-behavior: smooth;
+}
+
+/* =========================================================
+   INDIVIDUAL MESSAGE
+   ========================================================= */
+
+.message-wrapper,
+.message-row,
+.message {
+  width: 100%;
+  height: auto;
+  min-height: 0;
+
+  flex-shrink: 0;
+
+  position: relative;
+
+  box-sizing: border-box;
+}
+
+/* =========================================================
+   ASSISTANT MESSAGE
+   ========================================================= */
+
+.assistant-message,
+.ai-message,
+.bot-message,
+.serenity-message {
+  height: auto;
+  min-height: 0;
+
+  max-width: 82%;
+
+  padding: 18px 22px;
+
+  box-sizing: border-box;
+
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+
+  line-height: 1.6;
+
+  flex-shrink: 0;
+}
+
+/* =========================================================
+   USER MESSAGE
+   ========================================================= */
+
+.user-message {
+  height: auto;
+  min-height: 0;
+
+  max-width: 70%;
+
+  padding: 14px 20px;
+
+  box-sizing: border-box;
+
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+
+  line-height: 1.5;
+
+  flex-shrink: 0;
+}
+
+/* =========================================================
+   TEXT INSIDE MESSAGE
+   ========================================================= */
+
+.message-text,
+.assistant-message p,
+.ai-message p,
+.bot-message p,
+.serenity-message p,
+.user-message p {
+  max-width: 100%;
+
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+
+  margin-top: 0;
+}
+
+.assistant-message p:last-child,
+.ai-message p:last-child,
+.bot-message p:last-child,
+.serenity-message p:last-child,
+.user-message p:last-child {
+  margin-bottom: 0;
+}
+
+/* =========================================================
+   MARKDOWN / LONG TEXT
+   ========================================================= */
+
+.message-text ul,
+.message-text ol {
+  padding-left: 24px;
+}
+
+.message-text li {
+  margin-bottom: 6px;
+}
+
+.message-text a {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* =========================================================
+   COMPOSER / INPUT BOX
+   ========================================================= */
+
+.composer,
+.chat-input-container,
+.input-container {
+  flex-shrink: 0;
+
+  position: relative;
+
+  box-sizing: border-box;
+
+  width: 100%;
+}
+
+/* =========================================================
+   SCROLLBAR
+   ========================================================= */
+
+.messages-container::-webkit-scrollbar,
+.chat-messages::-webkit-scrollbar,
+.messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.messages-container::-webkit-scrollbar-track,
+.chat-messages::-webkit-scrollbar-track,
+.messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.messages-container::-webkit-scrollbar-thumb,
+.chat-messages::-webkit-scrollbar-thumb,
+.messages::-webkit-scrollbar-thumb {
+  background: rgba(130, 180, 255, 0.35);
+  border-radius: 10px;
+}
+
+.messages-container::-webkit-scrollbar-thumb:hover,
+.chat-messages::-webkit-scrollbar-thumb:hover,
+.messages::-webkit-scrollbar-thumb:hover {
+  background: rgba(130, 180, 255, 0.55);
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 768px) {
+  .messages-container,
+  .chat-messages,
+  .messages {
+    padding: 20px 16px 130px;
+  }
+
+  .assistant-message,
+  .ai-message,
+  .bot-message,
+  .serenity-message {
+    max-width: 90%;
+    padding: 16px 18px;
+  }
+
+  .user-message {
+    max-width: 85%;
+  }
+}
