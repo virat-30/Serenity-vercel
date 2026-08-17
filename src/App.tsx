@@ -640,85 +640,65 @@ export default function App() {
 
                 {/* USER + ASSISTANT MESSAGES */}
 
-                {messages.map(
-                  (chatMessage) => {
-                    if (
-                      chatMessage.role ===
-                      "user"
-                    ) {
-                      return (
-                        <div
-                          className="chat-user-row"
-                          key={
-                            chatMessage.id
-                          }
-                        >
-                          <span>
-                            You
-                          </span>
+                {messages.map((chatMessage) => {
+  if (chatMessage.role === "user") {
+    return (
+      <div
+        className="chat-user-row"
+        key={chatMessage.id}
+      >
+        <span>You</span>
 
-                          <div className="chat-user-bubble">
-                            {chatMessage.content}
-                          </div>
-                        </div>
-                      );
-                    }
+        <div className="chat-user-bubble">
+          {chatMessage.content}
+        </div>
+      </div>
+    );
+  }
 
-                    return (
-                      <div
-                        className="chat-assistant-row"
-                        key={
-                          chatMessage.id
-                        }
-                      >
-                        <div
-                          className="response-mark"
-                          aria-hidden="true"
-                        >
-                          <span>☾</span>
-                        </div>
+  return (
+    <div
+      className="chat-assistant-row"
+      key={chatMessage.id}
+    >
+      <div
+        className="response-mark"
+        aria-hidden="true"
+      >
+        <span>☾</span>
+      </div>
 
-                        <div className="chat-assistant-bubble">
-                          <p>
-                            {
-                              chatMessage.content
-                            }
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  },
-                )}
+      <div className="chat-assistant-bubble">
+        <p>{chatMessage.content}</p>
+      </div>
+    </div>
+  );
+})}
 
-                {/* TYPING INDICATOR */}
+{isSending && (
+  <div className="chat-assistant-row typing-message">
+    <div
+      className="response-mark"
+      aria-hidden="true"
+    >
+      <span>☾</span>
+    </div>
 
-                {isSending && (
-                  <div className="chat-assistant-row typing-message">
-                    <div
-                      className="response-mark"
-                      aria-hidden="true"
-                    >
-                      <span>☾</span>
-                    </div>
+    <div className="chat-assistant-bubble">
+      <div className="typing-indicator">
+        <span />
+        <span />
+        <span />
+      </div>
+    </div>
+  </div>
+)}
 
-                    <div className="chat-assistant-bubble">
-                      <div className="typing-indicator">
-                        <span />
-                        <span />
-                        <span />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* SCROLL TARGET */}
-
-                <div
-                  ref={messagesEndRef}
-                  className="messages-end"
-                  aria-hidden="true"
-                />
-              </div>
+<div
+  ref={messagesEndRef}
+  className="messages-end"
+  aria-hidden="true"
+/>
 
               {/* =================================================
                   INPUT
