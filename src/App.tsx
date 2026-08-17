@@ -64,9 +64,11 @@ function createUserId() {
 function readLocalMessages(sessionId: string): ChatMessage[] {
   try {
     const stored = localStorage.getItem(`${MESSAGE_KEY_PREFIX}${sessionId}`);
+
     if (!stored) return [];
 
     const parsed = JSON.parse(stored);
+
     if (!Array.isArray(parsed)) return [];
 
     return parsed.filter(
@@ -93,16 +95,27 @@ export default function App() {
   const inputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  /*
+   * ---------------------------------------------------------
+   * INITIALISE USER + SESSION
+   * ---------------------------------------------------------
+   */
+
   useEffect(() => {
     const existingUser = localStorage.getItem(USER_KEY);
     const existingSession = localStorage.getItem(SESSION_KEY);
-    // On the first Vercel visit, promote the old n8n-era session ID to the
-    // stable user ID so existing Supabase memories/history can still match.
-    const activeUser = existingUser || existingSession || createUserId();
-    const activeSession = existingSession || createSessionId();
+
+    // Preserve the old n8n-era session as the stable user ID
+    // when migrating to the Vercel backend.
+    const activeUser =
+      existingUser || existingSession || createUserId();
+
+    const activeSession =
+      existingSession || createSessionId();
 
     localStorage.setItem(USER_KEY, activeUser);
     localStorage.setItem(SESSION_KEY, activeSession);
+
     setUserId(activeUser);
     setSessionId(activeSession);
 
@@ -114,17 +127,21 @@ export default function App() {
     async function loadStoredHistory() {
       try {
         const response = await fetch(
-          `/api/history?userId=${encodeURIComponent(activeUser)}&sessionId=${encodeURIComponent(activeSession)}`,
+          `/api/history?userId=${encodeURIComponent(
+            activeUser,
+          )}&sessionId=${encodeURIComponent(activeSession)}`,
         );
 
         if (!response.ok) return;
 
         const data = await response.json();
+
         const storedMessages = Array.isArray(data.messages)
           ? data.messages
               .filter(
                 (item: { role?: string; content?: string }) =>
-                  (item.role === "user" || item.role === "assistant") &&
+                  (item.role === "user" ||
+                    item.role === "assistant") &&
                   typeof item.content === "string",
               )
               .map(
@@ -137,7 +154,11 @@ export default function App() {
                   },
                   index: number,
                 ): ChatMessage => ({
-                  id: `stored-${item.created_at || item.createdAt || index}`,
+                  id: `stored-${
+                    item.created_at ||
+                    item.createdAt ||
+                    index
+                  }`,
                   role: item.role,
                   content: item.content,
                   createdAt:
@@ -152,9 +173,11 @@ export default function App() {
           setMessages(storedMessages);
         }
       } catch {
-        // Local history remains available when the history workflow is down.
+        // Local history remains available if the history API is unavailable.
       } finally {
-        if (!cancelled) setIsLoadingHistory(false);
+        if (!cancelled) {
+          setIsLoadingHistory(false);
+        }
       }
     }
 
@@ -165,6 +188,12 @@ export default function App() {
     };
   }, []);
 
+  /*
+   * ---------------------------------------------------------
+   * SAVE LOCAL HISTORY
+   * ---------------------------------------------------------
+   */
+
   useEffect(() => {
     if (!sessionId || isLoadingHistory) return;
 
@@ -174,22 +203,63 @@ export default function App() {
     );
   }, [messages, sessionId, isLoadingHistory]);
 
+  /*
+   * ---------------------------------------------------------
+   * AUTO-SCROLL TO NEWEST MESSAGE
+   * ---------------------------------------------------------
+   */
+
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({
-      behavior: messages.length > 1 ? "smooth" : "auto",
-      block: "nearest",
-    });
+    const timeout = window.setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({
+        behavior:
+          messages.length > 1 ? "smooth" : "auto",
+        block: "end",
+      });
+    }, 50);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
   }, [messages, isSending]);
 
+  /*
+   * ---------------------------------------------------------
+   * START CHECK-IN
+   * ---------------------------------------------------------
+   */
+
   function beginCheckIn() {
-    inputRef.current?.focus();
+    document
+      .getElementById("chat")
+      ?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+
+    window.setTimeout(() => {
+      inputRef.current?.focus();
+    }, 400);
   }
+
+  /*
+   * ---------------------------------------------------------
+   * NEW CONVERSATION
+   * ---------------------------------------------------------
+   */
 
   function startNewConversation() {
     const newSessionId = createSessionId();
 
-    localStorage.setItem(SESSION_KEY, newSessionId);
-    localStorage.setItem(`${MESSAGE_KEY_PREFIX}${newSessionId}`, "[]");
+    localStorage.setItem(
+      SESSION_KEY,
+      newSessionId,
+    );
+
+    localStorage.setItem(
+      `${MESSAGE_KEY_PREFIX}${newSessionId}`,
+      "[]",
+    );
 
     setSessionId(newSessionId);
     setMessages([]);
@@ -198,14 +268,32 @@ export default function App() {
     setIsLoadingHistory(false);
     setSelectedMood(2);
 
-    window.setTimeout(() => inputRef.current?.focus(), 0);
+    window.setTimeout(() => {
+      inputRef.current?.focus();
+    }, 0);
   }
 
-  async function sendMessage(event: FormEvent<HTMLFormElement>) {
+  /*
+   * ---------------------------------------------------------
+   * SEND MESSAGE
+   * ---------------------------------------------------------
+   */
+
+  async function sendMessage(
+    event: FormEvent<HTMLFormElement>,
+  ) {
     event.preventDefault();
 
     const cleanMessage = message.trim();
-    if (!cleanMessage || isSending || !userId || !sessionId) return;
+
+    if (
+      !cleanMessage ||
+      isSending ||
+      !userId ||
+      !sessionId
+    ) {
+      return;
+    }
 
     const userMessage: ChatMessage = {
       id: `user-${Date.now()}`,
@@ -214,7 +302,11 @@ export default function App() {
       createdAt: new Date().toISOString(),
     };
 
-    setMessages((previousMessages) => [...previousMessages, userMessage]);
+    setMessages((previousMessages) => [
+      ...previousMessages,
+      userMessage,
+    ]);
+
     setMessage("");
     setError("");
     setIsSending(true);
@@ -222,7 +314,9 @@ export default function App() {
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           userId,
           sessionId,
@@ -234,14 +328,18 @@ export default function App() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Serenity could not respond.");
+        throw new Error(
+          data.error ||
+            "Serenity could not respond.",
+        );
       }
 
       const assistantMessage: ChatMessage = {
         id: `assistant-${Date.now()}`,
         role: "assistant",
         content:
-          data.output || "I’m here with you. Could you tell me a little more?",
+          data.output ||
+          "I’m here with you. Could you tell me a little more?",
         createdAt: new Date().toISOString(),
       };
 
@@ -260,11 +358,28 @@ export default function App() {
     }
   }
 
+  /*
+   * ---------------------------------------------------------
+   * UI
+   * ---------------------------------------------------------
+   */
+
   return (
     <main className="site-shell">
-      <div className="aurora aurora-one" aria-hidden="true" />
-      <div className="aurora aurora-two" aria-hidden="true" />
-      <div className="star-field" aria-hidden="true">
+      <div
+        className="aurora aurora-one"
+        aria-hidden="true"
+      />
+
+      <div
+        className="aurora aurora-two"
+        aria-hidden="true"
+      />
+
+      <div
+        className="star-field"
+        aria-hidden="true"
+      >
         <i />
         <i />
         <i />
@@ -273,13 +388,25 @@ export default function App() {
         <i />
       </div>
 
+      {/* =====================================================
+          HEADER
+          ===================================================== */}
+
       <header className="site-header">
-        <a className="brand" href="#home" aria-label="Serenity home">
-          <span className="brand-mark" aria-hidden="true">
+        <a
+          className="brand"
+          href="#home"
+          aria-label="Serenity home"
+        >
+          <span
+            className="brand-mark"
+            aria-hidden="true"
+          >
             <span className="brand-crescent" />
             <span className="brand-ripple brand-ripple-one" />
             <span className="brand-ripple brand-ripple-two" />
           </span>
+
           <span>Serenity</span>
         </a>
 
@@ -287,11 +414,24 @@ export default function App() {
           <a className="active" href="#chat">
             Chat
           </a>
-          <a href="#journey">Journey</a>
-          <a href="#memories">Memories</a>
-          <a href="#safety">Safety</a>
+
+          <a href="#journey">
+            Journey
+          </a>
+
+          <a href="#memories">
+            Memories
+          </a>
+
+          <a href="#safety">
+            Safety
+          </a>
         </nav>
       </header>
+
+      {/* =====================================================
+          HERO
+          ===================================================== */}
 
       <section className="hero" id="home">
         <div className="hero-copy">
@@ -309,82 +449,163 @@ export default function App() {
           </h1>
 
           <p className="hero-description">
-            Private, personalized emotional support that remembers what
-            matters—and knows when human help matters more.
+            Private, personalized emotional support
+            that remembers what matters—and knows
+            when human help matters more.
           </p>
 
           <div className="hero-actions">
-            <button className="primary-button" onClick={beginCheckIn}>
+            <button
+              className="primary-button"
+              onClick={beginCheckIn}
+              type="button"
+            >
               Start a check-in
-              <span aria-hidden="true">↗</span>
+              <span aria-hidden="true">
+                ↗
+              </span>
             </button>
-            <a className="secondary-button" href="#journey">
+
+            <a
+              className="secondary-button"
+              href="#journey"
+            >
               View my journey
             </a>
           </div>
 
-          <div className="trust-row" aria-label="Serenity principles">
+          <div
+            className="trust-row"
+            aria-label="Serenity principles"
+          >
             <span>
-              <i className="status-dot" aria-hidden="true" />
+              <i
+                className="status-dot"
+                aria-hidden="true"
+              />
               Memory you control
             </span>
+
             <span>
-              <i className="status-dot" aria-hidden="true" />
+              <i
+                className="status-dot"
+                aria-hidden="true"
+              />
               Human help when needed
             </span>
           </div>
         </div>
 
-        <div className="check-in-wrap" id="chat">
-          <div className="orbit orbit-one" aria-hidden="true" />
-          <div className="orbit orbit-two" aria-hidden="true" />
+        {/* =================================================
+            CHECK-IN CARD
+            ================================================= */}
+
+        <div
+          className="check-in-wrap"
+          id="chat"
+        >
+          <div
+            className="orbit orbit-one"
+            aria-hidden="true"
+          />
+
+          <div
+            className="orbit orbit-two"
+            aria-hidden="true"
+          />
 
           <article className="check-in-card">
+            {/* TOP BAR */}
+
             <div className="card-topbar">
               <div className="card-title">
-                <span className="serenity-dot" aria-hidden="true" />
+                <span
+                  className="serenity-dot"
+                  aria-hidden="true"
+                />
+
                 <div>
-                  <strong>Evening check-in</strong>
-                  <small>Serenity is here with you</small>
+                  <strong>
+                    Evening check-in
+                  </strong>
+
+                  <small>
+                    Serenity is here with you
+                  </small>
                 </div>
               </div>
 
               <div className="card-actions">
                 <button
                   className="new-chat-button"
-                  onClick={startNewConversation}
+                  onClick={
+                    startNewConversation
+                  }
                   type="button"
                 >
                   New conversation
                 </button>
+
                 <span className="privacy-pill">
-                  <span className="lock-icon" aria-hidden="true" />
+                  <span
+                    className="lock-icon"
+                    aria-hidden="true"
+                  />
                   Private
                 </span>
               </div>
             </div>
 
-            <div className="card-body">
-              <p className="question">How are you feeling right now?</p>
+            {/* CARD BODY */}
 
-              <div className="mood-grid" aria-label="Choose your current mood">
-                {moods.map((mood, index) => (
-                  <button
-                    className={`mood-option ${
-                      selectedMood === index ? "selected" : ""
-                    }`}
-                    key={mood.label}
-                    onClick={() => setSelectedMood(index)}
-                    aria-pressed={selectedMood === index}
-                    type="button"
-                  >
-                    <span className="mood-face" aria-hidden="true">
-                      {mood.face}
-                    </span>
-                    <span>{mood.label}</span>
-                  </button>
-                ))}
+            <div className="card-body">
+              <p className="question">
+                How are you feeling right now?
+              </p>
+
+              {/* MOODS */}
+
+              <div
+                className="mood-grid"
+                aria-label="Choose your current mood"
+              >
+                {moods.map(
+                  (mood, index) => (
+                    <button
+                      className={`mood-option ${
+                        selectedMood === index
+                          ? "selected"
+                          : ""
+                      }`}
+                      key={mood.label}
+                      onClick={() =>
+                        setSelectedMood(
+                          index,
+                        )
+                      }
+                      aria-pressed={
+                        selectedMood === index
+                      }
+                      type="button"
+                    >
+                      <span
+                        className="mood-face"
+                        aria-hidden="true"
+                      >
+                        {mood.face}
+                      </span>
+
+                      <span>
+                        {mood.label}
+                      </span>
+                    </button>
+                  ),
+                )}
               </div>
+
+              {/* =================================================
+                  CONVERSATION
+                  ================================================= */}
 
               <div
                 className="conversation-list"
@@ -392,71 +613,146 @@ export default function App() {
                 aria-live="polite"
               >
                 {isLoadingHistory && (
-                  <p className="history-status">Loading earlier messages…</p>
+                  <p className="history-status">
+                    Loading earlier messages…
+                  </p>
                 )}
 
-                {!isLoadingHistory && messages.length === 0 && (
-                  <div className="assistant-message">
-                    <div className="response-mark" aria-hidden="true">
+                {!isLoadingHistory &&
+                  messages.length === 0 && (
+                    <div className="assistant-message">
+                      <div
+                        className="response-mark"
+                        aria-hidden="true"
+                      >
+                        <span>☾</span>
+                      </div>
+
+                      <p>
+                        {
+                          moods[
+                            selectedMood
+                          ].response
+                        }
+                      </p>
+                    </div>
+                  )}
+
+                {/* USER + ASSISTANT MESSAGES */}
+
+                {messages.map(
+                  (chatMessage) => {
+                    if (
+                      chatMessage.role ===
+                      "user"
+                    ) {
+                      return (
+                        <div
+                          className="chat-user-row"
+                          key={
+                            chatMessage.id
+                          }
+                        >
+                          <span>
+                            You
+                          </span>
+
+                          <div className="chat-user-bubble">
+                            {chatMessage.content}
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div
+                        className="chat-assistant-row"
+                        key={
+                          chatMessage.id
+                        }
+                      >
+                        <div
+                          className="response-mark"
+                          aria-hidden="true"
+                        >
+                          <span>☾</span>
+                        </div>
+
+                        <div className="chat-assistant-bubble">
+                          <p>
+                            {
+                              chatMessage.content
+                            }
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  },
+                )}
+
+                {/* TYPING INDICATOR */}
+
+                {isSending && (
+                  <div className="chat-assistant-row typing-message">
+                    <div
+                      className="response-mark"
+                      aria-hidden="true"
+                    >
                       <span>☾</span>
                     </div>
-                    <p>{moods[selectedMood].response}</p>
+
+                    <div className="chat-assistant-bubble">
+                      <div className="typing-indicator">
+                        <span />
+                        <span />
+                        <span />
+                      </div>
+                    </div>
                   </div>
                 )}
 
-                {messages.map((chatMessage) =>
-                  chatMessage.role === "user" ? (
-                    <div className="chat-page">
+                {/* SCROLL TARGET */}
 
-  {/* HEADER */}
-  <header className="chat-header">
-    {/* Your existing Serenity header */}
-  </header>
-
-  {/* MESSAGES */}
-  <main className="messages-container">
-
-    {messages.map((message) => (
-      <div
-        key={message.id}
-        className={`message-wrapper ${
-          message.role === "user"
-            ? "user-message"
-            : "assistant-message"
-        }`}
-      >
-        <div className="message-text">
-          {message.content}
-        </div>
-      </div>
-    ))}
-
-  </main>
-
-  {/* INPUT */}
-  <div className="composer">
-    {/* Your existing input/composer */}
-  </div>
-
-</div>
-                )}
-
-                <div ref={messagesEndRef} />
+                <div
+                  ref={messagesEndRef}
+                  className="messages-end"
+                  aria-hidden="true"
+                />
               </div>
 
-              <form className="message-form" onSubmit={sendMessage}>
-                <label className="sr-only" htmlFor="check-in-message">
+              {/* =================================================
+                  INPUT
+                  ================================================= */}
+
+              <form
+                className="message-form"
+                onSubmit={sendMessage}
+              >
+                <label
+                  className="sr-only"
+                  htmlFor="check-in-message"
+                >
                   Share what is on your mind
                 </label>
+
                 <input
                   id="check-in-message"
                   ref={inputRef}
                   value={message}
-                  onChange={(event) => setMessage(event.target.value)}
+                  onChange={(event) =>
+                    setMessage(
+                      event.target.value,
+                    )
+                  }
                   placeholder="Share what’s on your mind…"
                   autoComplete="off"
-                  disabled={!userId || !sessionId || isLoadingHistory}
+                  disabled={
+                    !userId ||
+                    !sessionId ||
+                    isLoadingHistory
+                  }
                 />
+
                 <button
                   type="submit"
                   aria-label="Send check-in message"
@@ -468,40 +764,77 @@ export default function App() {
                     !message.trim()
                   }
                 >
-                  <span aria-hidden="true">➤</span>
+                  <span aria-hidden="true">
+                    ➤
+                  </span>
                 </button>
               </form>
 
               {error && (
-                <p className="form-error" role="alert">
+                <p
+                  className="form-error"
+                  role="alert"
+                >
                   {error}
                 </p>
               )}
 
               <p className="support-note">
-                Serenity offers emotional support, not medical diagnosis or
-                emergency care.
+                Serenity offers emotional
+                support, not medical diagnosis
+                or emergency care.
               </p>
             </div>
           </article>
         </div>
       </section>
 
-      <section className="journey-preview" id="journey">
-        <p className="section-kicker">Your journey, made visible</p>
-        <h2>Small check-ins become meaningful patterns.</h2>
+      {/* =====================================================
+          JOURNEY
+          ===================================================== */}
+
+      <section
+        className="journey-preview"
+        id="journey"
+      >
+        <p className="section-kicker">
+          Your journey, made visible
+        </p>
+
+        <h2>
+          Small check-ins become meaningful
+          patterns.
+        </h2>
+
         <div className="preview-grid">
           <article>
-            <span className="preview-number">07</span>
-            <strong>days of reflection</strong>
+            <span className="preview-number">
+              07
+            </span>
+
+            <strong>
+              days of reflection
+            </strong>
           </article>
+
           <article id="memories">
-            <span className="preview-number">12</span>
-            <strong>memories you control</strong>
+            <span className="preview-number">
+              12
+            </span>
+
+            <strong>
+              memories you control
+            </strong>
           </article>
+
           <article id="safety">
-            <span className="preview-number">24/7</span>
-            <strong>crisis resources available</strong>
+            <span className="preview-number">
+              24/7
+            </span>
+
+            <strong>
+              crisis resources available
+            </strong>
           </article>
         </div>
       </section>
