@@ -406,29 +406,39 @@ export default function App() {
 
                 {messages.map((chatMessage) =>
                   chatMessage.role === "user" ? (
-                    <div className="user-message" key={chatMessage.id}>
-                      <span>You</span>
-                      <p>{chatMessage.content}</p>
-                    </div>
-                  ) : (
-                    <div className="assistant-message" key={chatMessage.id}>
-                      <div className="response-mark" aria-hidden="true">
-                        <span>☾</span>
-                      </div>
-                      <p>{chatMessage.content}</p>
-                    </div>
-                  ),
-                )}
+                    <div className="chat-page">
 
-                {isSending && (
-                  <div className="assistant-message typing-message">
-                    <div className="response-mark" aria-hidden="true">
-                      <span>☾</span>
-                    </div>
-                    <p>
-                      Serenity is thinking<span aria-hidden="true">…</span>
-                    </p>
-                  </div>
+  {/* HEADER */}
+  <header className="chat-header">
+    {/* Your existing Serenity header */}
+  </header>
+
+  {/* MESSAGES */}
+  <main className="messages-container">
+
+    {messages.map((message) => (
+      <div
+        key={message.id}
+        className={`message-wrapper ${
+          message.role === "user"
+            ? "user-message"
+            : "assistant-message"
+        }`}
+      >
+        <div className="message-text">
+          {message.content}
+        </div>
+      </div>
+    ))}
+
+  </main>
+
+  {/* INPUT */}
+  <div className="composer">
+    {/* Your existing input/composer */}
+  </div>
+
+</div>
                 )}
 
                 <div ref={messagesEndRef} />
